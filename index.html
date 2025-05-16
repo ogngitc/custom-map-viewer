@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>群馬マップGPS表示</title>
+  <style>canvas { border: 1px solid #ccc; }</style>
+</head>
+<body>
+  <h1>群馬県イラスト地図（現在地表示）</h1>
+  <canvas id="mapCanvas" width="800" height="600"></canvas>
+
+  <script>
+    const canvas = document.getElementById("mapCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const mapImage = new Image();
+    mapImage.src = "gunma_map.png"; // 同フォルダに画像を配置
+
+    const latTop = 36.8, latBottom = 36.2;
+    const lngLeft = 138.4, lngRight = 139.6;
+
+    function latLngToXY(lat, lng) {
+      const x = ((lng - lngLeft) / (lngRight - lngLeft)) * canvas.width;
+      const y = ((latTop - lat) / (latTop - latBottom)) * canvas.height;
+      return { x, y };
+    }
+
+    mapImage.onload = () => {
+      ctx.drawImage(mapImage, 0, 0, canvas.width, canvas.height);
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { latitude, longitude } = pos.coords;
+            const { x, y } = latLngToXY(latitude, longitude);
+            ctx.fillStyle = "red";
+            ctx.beginPath();
+            ctx.arc(x, y, 8, 0, Math.PI * 2);
+            ctx.fill();
+          },
+          (err) => alert("位置情報取得失敗: " + err.message)
+        );
+      }
+    };
+  </script>
+</body>
+</html>
