@@ -16,16 +16,14 @@
     const canvas = document.getElementById("mapCanvas");
     const ctx = canvas.getContext("2d");
 
-    // 地図画像
+    // 地図画像とピン画像
     const mapImage = new Image();
     mapImage.src = "shimonita_giopark.jpg"; // 同フォルダに配置
 
-    // CDNから読み込むピン画像（確実に表示される）
     const pinImage = new Image();
-    pinImage.crossOrigin = "anonymous"; // CORS対策（GitHub Pagesでも安心）
-    pinImage.src = "https://cdn-icons-png.flaticon.com/512/684/684908.png";
+    pinImage.src = "pin.png"; // あなたのオリジナルピン画像
 
-    // 下仁田エリア緯度経度範囲（仮設定）
+    // 下仁田付近の緯度経度範囲（例：36.2〜36.0, 138.7〜138.9）
     const latTop = 36.2, latBottom = 36.0;
     const lngLeft = 138.7, lngRight = 138.9;
 
@@ -38,13 +36,13 @@
     function drawPinMarker(x, y) {
       const pinWidth = 32;
       const pinHeight = 32;
+      // ピンの底が位置中心になるよう調整
       ctx.drawImage(pinImage, x - pinWidth / 2, y - pinHeight, pinWidth, pinHeight);
       ctx.fillStyle = "black";
       ctx.font = "14px sans-serif";
-      ctx.fillText("現在地", x + 18, y - pinHeight / 2);
+      ctx.fillText("現在地", x + 16, y - pinHeight / 2);
     }
 
-    // 両画像読み込み完了後に描画
     let mapReady = false;
     let pinReady = false;
 
@@ -63,14 +61,14 @@
           (err) => alert("位置情報取得失敗：" + err.message)
         );
       } else {
-        alert("このブラウザは位置情報に非対応です");
+        alert("このブラウザは位置情報をサポートしていません");
       }
     }
 
     mapImage.onload = () => { mapReady = true; tryDraw(); };
     pinImage.onload = () => { pinReady = true; tryDraw(); };
-    mapImage.onerror = () => alert("地図画像の読み込みに失敗しました");
-    pinImage.onerror = () => alert("ピン画像の読み込みに失敗しました");
+    mapImage.onerror = () => alert("❌ 地図画像（shimonita_giopark.jpg）の読み込みに失敗しました");
+    pinImage.onerror = () => alert("❌ ピン画像（pin.png）の読み込みに失敗しました");
   </script>
 </body>
 </html>
