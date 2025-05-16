@@ -16,44 +16,32 @@
     const canvas = document.getElementById("mapCanvas");
     const ctx = canvas.getContext("2d");
 
-    // 地図画像（GitHub Pagesでも相対パスでOK）
+    // 背景マップ（イラスト）
     const mapImage = new Image();
-    mapImage.src = "shimonita_giopark.jpg"; // 画像ファイルと同じ場所に置く
+    mapImage.src = "shimonita_giopark.jpg"; // 同フォルダに配置
 
-    // 下仁田周辺の緯度経度範囲（例として設定）
+    // ピン画像
+    const pinImage = new Image();
+    pinImage.src = "pin.png"; // 同フォルダに配置されたピン画像
+
+    // 地図範囲（緯度・経度）例：下仁田周辺
     const latTop = 36.2, latBottom = 36.0;
     const lngLeft = 138.7, lngRight = 138.9;
 
+    // 緯度経度 → キャンバス座標へ変換
     function latLngToXY(lat, lng) {
       const x = ((lng - lngLeft) / (lngRight - lngLeft)) * canvas.width;
       const y = ((latTop - lat) / (latTop - latBottom)) * canvas.height;
       return { x, y };
     }
 
-    function drawTearDropMarker(x, y) {
-      const radius = 12;
+    // 地図とピン両方が読み込まれたら描画開始
+    let mapLoaded = false;
+    let pinLoaded = false;
 
-      // ● 円（上部）
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, Math.PI * 2);
-      ctx.fillStyle = "red";
-      ctx.fill();
+    function tryDraw() {
+      if (!mapLoaded || !pinLoaded) return;
 
-      // ▼ 三角形（下部）
-      ctx.beginPath();
-      ctx.moveTo(x - radius * 0.6, y + radius * 0.2);
-      ctx.lineTo(x + radius * 0.6, y + radius * 0.2);
-      ctx.lineTo(x, y + radius * 1.8);
-      ctx.closePath();
-      ctx.fill();
-
-      // ラベル
-      ctx.fillStyle = "black";
-      ctx.font = "14px sans-serif";
-      ctx.fillText("現在地", x + 14, y + 4);
-    }
-
-    mapImage.onload = function () {
       ctx.drawImage(mapImage, 0, 0, canvas.width, canvas.height);
 
       if (navigator.geolocation) {
@@ -61,20 +49,36 @@
           (pos) => {
             const { latitude, longitude } = pos.coords;
             const { x, y } = latLngToXY(latitude, longitude);
-            drawTearDropMarker(x, y);
+
+            // ピン画像の中央下端を現在地に合わせて描画
+            const pinWidth = 32;
+            const pinHeight = 32;
+            ctx.drawImage(pinImage, x - pinWidth / 2, y - pinHeight, pinWidth, pinHeight);
+
+            // ラベル
+            ctx.font = "14px sans-serif";
+            ctx.fillStyle = "black";
+            ctx.fillText("現在地", x + 16, y - pinHeight / 2);
           },
-          (err) => {
-            alert("位置情報の取得に失敗：" + err.message);
-          }
+          (err) => alert("位置情報取得に失敗しました：" + err.message)
         );
       } else {
-        alert("このブラウザでは位置情報が使用できません");
+        alert("このブラウザは位置情報をサポートしていません");
       }
+    }
+
+    mapImage.onload = () => {
+      mapLoaded = true;
+      tryDraw();
     };
 
-    mapImage.onerror = function () {
-      alert("地図画像の読み込みに失敗しました。ファイル名を確認してください。");
+    pinImage.onload = () => {
+      pinLoaded = true;
+      tryDraw();
     };
+
+    mapImage.onerror = () => alert("地図画像の読み込みに失敗しました");
+    pinImage.onerror = () => alert("ピン画像の読み込みに失敗しました");
   </script>
 </body>
 </html>
