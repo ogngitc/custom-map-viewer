@@ -2,11 +2,11 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>群馬マップGPS表示</title>
+  <title>マップGPS表示</title>
   <style>canvas { border: 1px solid #ccc; }</style>
 </head>
 <body>
-  <h1>群馬県イラスト地図（現在地表示）</h1>
+  <h1>下仁田GIOPARK</h1>
   <canvas id="mapCanvas" width="800" height="600"></canvas>
 
   <script>
@@ -14,7 +14,7 @@
     const ctx = canvas.getContext("2d");
 
     const mapImage = new Image();
-    mapImage.src = "gunma_map.png"; // 同フォルダに画像を配置
+    mapImage.src = "shimonita_giopark.jpg"; // 同フォルダに画像を配置
 
     const latTop = 36.8, latBottom = 36.2;
     const lngLeft = 138.4, lngRight = 139.6;
