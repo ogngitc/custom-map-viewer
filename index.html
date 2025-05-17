@@ -1,119 +1,73 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>下仁田ジオパークの現在地マップ</title>
-  <style>
-    canvas { border: 1px solid #ccc; }
-    body { font-family: sans-serif; text-align: center; }
-  </style>
-</head>
-<body>
-  <h1>下仁田ジオパークの現在地マップ</h1>
-  <canvas id="mapCanvas" width="1322" height="1153"></canvas>
+<script>
+  const canvas = document.getElementById("mapCanvas");
+  const ctx = canvas.getContext("2d");
 
-  <script>
-    const canvas = document.getElementById("mapCanvas");
-    const ctx = canvas.getContext("2d");
+  const mapImage = new Image();
+  mapImage.src = "shimonita_giopark.jpg";
 
-    const mapImage = new Image();
-    mapImage.src = "shimonita_giopark.jpg";  // 地図画像（1322x1153）
+  const pinImage = new Image();
+  pinImage.src = "pin.png";
 
-    const pinImage = new Image();
-    pinImage.src = "pin.png";  // ピン画像
+  const latTop = 36.280;
+  const latBottom = 36.190;
+  const lngLeft = 138.700;
+  const lngRight = 138.850;
 
-    // 緯度経度範囲（下仁田町全域をカバー）
-    const latTop = 36.280;
-    const latBottom = 36.190;
-    const lngLeft = 138.700;
-    const lngRight = 138.850;
+  function latLngToXY(lat, lng) {
+    const x = ((lng - lngLeft) / (lngRight - lngLeft)) * canvas.width;
+    const y = ((latTop - lat) / (latTop - latBottom)) * canvas.height;
+    return { x, y };
+  }
 
-    function latLngToXY(lat, lng) {
-      const x = ((lng - lngLeft) / (lngRight - lngLeft)) * canvas.width;
-      const y = ((latTop - lat) / (latTop - latBottom)) * canvas.height;
-      return { x, y };
-    }
+  function drawPinMarker(x, y) {
+    const pinWidth = 32, pinHeight = 32;
+    ctx.drawImage(pinImage, x - pinWidth / 2, y - pinHeight, pinWidth, pinHeight);
+    ctx.font = "14px sans-serif";
+    ctx.fillStyle = "black";
+    ctx.fillText("現在地", x + 16, y - pinHeight / 2);
+  }
 
-    function drawPinMarker(x, y) {
-      const pinW = 32, pinH = 32;
-      ctx.drawImage(pinImage, x - pinW / 2, y - pinH, pinW, pinH);
-      ctx.fillStyle = "black";
-      ctx.font = "14px sans-serif";
-      ctx.fillText("現在地", x + 16, y - 16);
-    }
+  let mapReady = false;
+  let pinReady = false;
 
-    let mapLoaded = false, pinLoaded = false;
-
-    function tryDraw(lat, lng) {
-      if (!mapLoaded || !pinLoaded) return;
-      ctx.drawImage(mapImage, 0, 0);
-      const { x, y } = latLngToXY(lat, lng);
+  // 地図描画と仮のピン
+  function drawInitialMap() {
+    if (mapReady && pinReady) {
+      ctx.drawImage(mapImage, 0, 0, canvas.width, canvas.height);
+      const { x, y } = latLngToXY(36.235, 138.775); // 仮の中心座標
       drawPinMarker(x, y);
     }
+  }
 
-    mapImage.onload = () => {
-      mapLoaded = true;
-      // 仮位置（適当な場所）でマーカー表示：下仁田の中心付近
-      tryDraw(36.235, 138.775);
-    };
+  // GPSが取得できたら上書きして再描画
+  function drawWithGPS(lat, lng) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(mapImage, 0, 0, canvas.width, canvas.height);
+    const { x, y } = latLngToXY(lat, lng);
+    drawPinMarker(x, y);
+  }
 
-    pinImage.onload = () => {
-      pinLoaded = true;
-    };
+  mapImage.onload = () => {
+    mapReady = true;
+    drawInitialMap();
 
-    pinImage.onerror = () => alert("❌ ピン画像が読み込めませんでした");
-    mapImage.onerror = () => alert("❌ 地図画像が読み込めませんでした");
-
-    // GPS位置表示（ユーザー許可があれば上書き）
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          tryDraw(lat, lng);
+          const { latitude, longitude } = pos.coords;
+          drawWithGPS(latitude, longitude);
         },
         (err) => {
-          console.warn("位置情報取得に失敗：", err.message);
+          console.warn("GPS取得失敗:", err.message);
         }
       );
+    } else {
+      alert("このブラウザはGPSに対応していません");
     }
-  </script>
-</body>
-</html>
+  };
 
-      ctx.drawImage(pinImage, x - pinWidth / 2, y - pinHeight, pinWidth, pinHeight);
-      ctx.font = "14px sans-serif";
-      ctx.fillStyle = "black";
-      ctx.fillText("現在地", x + 16, y - pinHeight / 2);
-    }
-
-    // 地図・ピンが両方読み込まれた後に描画開始
-    let mapReady = false;
-    let pinReady = false;
-
-    function tryDraw() {
-      if (!mapReady || !pinReady) return;
-
-      ctx.drawImage(mapImage, 0, 0, canvas.width, canvas.height);
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const { latitude, longitude } = pos.coords;
-            const { x, y } = latLngToXY(latitude, longitude);
-            drawPinMarker(x, y);
-          },
-          (err) => alert("位置情報の取得に失敗しました：" + err.message)
-        );
-      } else {
-        alert("このブラウザは位置情報をサポートしていません");
-      }
-    }
-
-    mapImage.onload = () => { mapReady = true; tryDraw(); };
-    pinImage.onload = () => { pinReady = true; tryDraw(); };
-    mapImage.onerror = () => alert("地図画像（shimonita_giopark.jpg）の読み込みに失敗しました");
-    pinImage.onerror = () => alert("ピン画像（pin.png）の読み込みに失敗しました");
-  </script>
-</body>
-</html>
+  pinImage.onload = () => {
+    pinReady = true;
+    drawInitialMap();
+  };
+</script>
